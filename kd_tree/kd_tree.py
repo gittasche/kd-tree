@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.typing import ArrayLike
 import matplotlib.pyplot as plt
 
 from .base import KDTreeBase
@@ -12,12 +13,14 @@ class KDTree(KDTreeBase):
     points : array-like of shape (N, D)
         Array of points to build tree
     """
-    def __init__(self, points):
+    def __init__(self, points: ArrayLike) -> None:
         if not isinstance(points, np.ndarray):
             points = np.array(points)
-        super().__init__(np.copy(points))
+
+        self.points = np.atleast_2d(points)
+        super().__init__(np.copy(self.points))
     
-    def add_point(self, point):
+    def add_point(self, point: ArrayLike) -> None:
         """
         Add a new point to the tree.
 
@@ -28,25 +31,43 @@ class KDTree(KDTreeBase):
         """
         if not isinstance(point, np.ndarray):
             point = np.array(point)
+        
+        self.points = np.append(self.points, np.atleast_2d(point), axis=0)
         super()._add_point(point)
     
-    def query_knn(self, point, k, sort=False, metric=2):
+    def query_knn(
+        self,
+        point: ArrayLike,
+        k: int,
+        sort: bool = False,
+        return_distances: bool = False,
+        metric: int = 2
+    ) -> np.ndarray:
         """
         k nearest neighbours query.
 
         Parameters
         ----------
         point : array-like of shape (D,)
-            Get neighbours of this point
+            get neighbours of this point
         k : int
-            Number of neighbours
+            number of neighbours
         sort : bool (default: False)
-            Sort neighbours by distance to point
+            sort neighbours by distance to point
+        return_distances : bool (default: False)
+            return distances between neighbours and point
         metric : {1, 2, numpy.inf}
-            metric for numpy.linalg.norm function.
+            metric of distance for numpy.linalg.norm function.
             1 : l1 norm, sum(abs(x[i]))
             2 : l2 norm, sqrt(sum(x[i]**2))
             numpy.inf : l-inf norm, max(abs(x[i]))
+
+        Returns
+        -------
+        if return_distances:
+            np.ndarray of tuples(distance, neighbour points)
+        else:
+            np.ndarray of tuples(neighbour points)
         """
         if not isinstance(point, np.ndarray):
             point = np.array(point)
@@ -58,23 +79,25 @@ class KDTree(KDTreeBase):
         super()._query_knn(point, k, metric, results)
         if sort:
             results = sorted(results)[::-1]
-        return np.array([result[2] for result in results])
+        if return_distances:
+            return np.array([(-result[0], result[2]) for result in results], dtype=object)
+        else:
+            return np.array([(result[2]) for result in results], dtype=object)
     
-    def visualize(self, points):
+    def visualize(self):
         """
         Visualize 2d-tree.
 
-        Parameters:
-        points : array-like of shape (N, D)
-            Points in the tree
+        Returns
+        -------
+        ax : matplotlib.axes.Axes object
+            for further use
         """
         if super().get_dim != 2:
             raise ValueError("Must be 2 dimensions to visualize.")
         
-        if not isinstance(points, np.ndarray):
-            points = np.array(points)
-        
-        x_min, x_max = np.min([points[:, 0]]), np.max([points[:, 0]])
-        y_min, y_max = np.min([points[:, 1]]), np.max([points[:, 1]])
-        fig, ax = plt.subplots(figsize=(12,10))
+        x_min, x_max = np.min([self.points[:, 0]]), np.max([self.points[:, 0]])
+        y_min, y_max = np.min([self.points[:, 1]]), np.max([self.points[:, 1]])
+        _, ax = plt.subplots(figsize=(12,10))
         super()._visualize(x_min, x_max, y_min, y_max)
+        return ax

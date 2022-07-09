@@ -8,7 +8,7 @@ class KDTreeBase:
         self.dim = points.shape[-1]
         self.division_axis = division_axis
         
-        if points.ndim > 1 and points.shape[0] > 1:
+        if points.shape[0] > 1:
             idx_sort = np.argsort(points[:, division_axis])
             points[:] = points[idx_sort]
 
@@ -18,8 +18,8 @@ class KDTreeBase:
             self.data = points[middle]
             self.left = KDTreeBase(points[:middle], division_axis)
             self.right = KDTreeBase(points[middle + 1:], division_axis)
-        elif points.ndim == 1 or points.shape[0] == 1:
-            self.data = points.ravel()
+        elif points.shape[0] == 1:
+            self.data = points[0]
             self.left = None
             self.right = None
         else:
@@ -27,13 +27,14 @@ class KDTreeBase:
     
     def _add_point(self, point):
         if self.data is not None:
+            division_axis = (self.division_axis + 1) % self.dim
             dx = self.data[self.division_axis] - point[self.division_axis]
             if dx >= 0 and self.left is None:
-                self.left = KDTreeBase(point)
+                self.left = KDTreeBase(np.atleast_2d(point), division_axis)
             elif dx >=0:
                 self.left._add_point(point)
             if dx < 0 and self.right is None:
-                self.right = KDTreeBase(point)
+                self.right = KDTreeBase(np.atleast_2d(point), division_axis)
             elif dx < 0:
                 self.right._add_point(point)
 
