@@ -4,14 +4,30 @@ import heapq
 import itertools
 
 class KDTreeBase:
+    """
+    kd-tree implementation class.
+
+    Attributes
+    ----------
+    dim : ndarray of shape(D,)
+        dimension of space
+    division_axis : int
+        splitting hyperplane orthoghonal to division axis
+    data : ndarray of shape(D,)
+        point in current leaf
+    left, right : KDTreeBase object
+        references to child leafs
+        left and right doesn't make any sense, just analogy with binary tree
+    """
     def __init__(self, points=None, division_axis=0):
         self.dim = points.shape[-1]
         self.division_axis = division_axis
         
         if points.shape[0] > 1:
             idx_sort = np.argsort(points[:, division_axis])
-            points[:] = points[idx_sort]
+            points = points[idx_sort]
 
+            # equivalent to `points.shape[0] // 2`
             middle = points.shape[0] >> 1
             division_axis = (division_axis + 1) % self.dim
 
@@ -26,6 +42,14 @@ class KDTreeBase:
             self.data = None
     
     def _add_point(self, point):
+        """
+        Add a new point to the tree.
+
+        Parameters
+        ----------
+        point : array-like of shape (D,)
+            New point
+        """
         if self.data is not None:
             division_axis = (self.division_axis + 1) % self.dim
             dx = self.data[self.division_axis] - point[self.division_axis]
@@ -39,9 +63,28 @@ class KDTreeBase:
                 self.right._add_point(point)
 
     def _query_knn(self, point, k, metric, heap, counter=itertools.count()):
+        """
+        k nearest neighbor query
+
+        Parameters
+        ----------
+        point : ndarray of shape(D,)
+            get neighbors of this point
+        k : int
+            number of neighbors
+        metric : {1, 2, inf}
+            metric of distance for numpy.linalg.norm function.
+        heap : list
+            heap of neighbors candidates,
+            initial value suppose to be []
+        counter : itertools.count object
+            counter to avoid comparison error in heappushpop()
+        """
         if self.data is not None:
             dist = np.linalg.norm(self.data - point, ord=metric)
             dx = self.data[self.division_axis] - point[self.division_axis]
+            # less distance must have higher priority,
+            # so `-dist` in `item` instead of `dist`
             item = (-dist, next(counter), self.data)
             if len(heap) < k:
                 heapq.heappush(heap, item)
@@ -63,6 +106,14 @@ class KDTreeBase:
                         self.left._query_knn(point, k, metric, heap, counter)
     
     def _visualize(self, x_min, x_max, y_min, y_max):
+        """
+        Visualize 2d-tree.
+
+        Parameters
+        ----------
+        x_min, x_max, y_min, y_max : ndarray's of shape(D,)
+            coordinates of vertices of plot rectangular area
+        """
         if self.data is not None:
             plt.scatter(self.data[0], self.data[1], s=40, c='IndianRed', alpha=0.5)
             if self.division_axis == 0:

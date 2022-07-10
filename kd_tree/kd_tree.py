@@ -44,18 +44,18 @@ class KDTree(KDTreeBase):
         metric: int = 2
     ) -> np.ndarray:
         """
-        k nearest neighbours query.
+        k nearest neighbors query.
 
         Parameters
         ----------
         point : array-like of shape (D,)
-            get neighbours of this point
+            get neighbors of this point
         k : int
-            number of neighbours
+            number of neighbors
         sort : bool (default: False)
-            sort neighbours by distance to point
+            sort neighbors by distance to point
         return_distances : bool (default: False)
-            return distances between neighbours and point
+            return distances between neighbors and point
         metric : {1, 2, numpy.inf}
             metric of distance for numpy.linalg.norm function.
             1 : l1 norm, sum(abs(x[i]))
@@ -65,9 +65,9 @@ class KDTree(KDTreeBase):
         Returns
         -------
         if return_distances:
-            np.ndarray of tuples(distance, neighbour points)
+            np.ndarray of tuples(distance, neighbor points)
         else:
-            np.ndarray of tuples(neighbour points)
+            np.ndarray of tuples(neighbor points)
         """
         if not isinstance(point, np.ndarray):
             point = np.array(point)
